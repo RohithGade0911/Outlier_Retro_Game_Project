@@ -7,16 +7,14 @@ export class PowerUpManager {
         this.powerUps = [];
         this.spawnTimer = 0;
         this.spawnInterval = 10000; // Spawn power-up every 10 seconds
-        this.powerUpTypes = ['rapidFire', 'laser', 'missile', 'shield'];
+        this.powerUpTypes = ['rapidFire', 'missile', 'shield'];
         this.powerUpTimers = {
             rapidFire: 0,
-            laser: 0,
             missile: 0,
             shield: 0
         };
         this.powerUpDurations = {
             rapidFire: 10000, // 10 seconds
-            laser: 8000,     // 8 seconds
             missile: 12000,  // 12 seconds
             shield: 15000    // 15 seconds
         };
@@ -44,7 +42,6 @@ export class PowerUpManager {
     getPowerUpColor(type) {
         const colors = {
             rapidFire: 0xFF0000, // Red
-            laser: 0x0000FF,     // Blue
             missile: 0xFFA500,   // Orange
             shield: 0x00FF00     // Green
         };
@@ -52,21 +49,21 @@ export class PowerUpManager {
     }
     
     activatePowerUp(type) {
+        console.log(`Activating power-up: ${type}`);
         this.powerUpTimers[type] = this.powerUpDurations[type];
         
         switch (type) {
             case 'rapidFire':
                 this.player.fireRate = 100; // Faster firing
                 break;
-            case 'laser':
-                this.player.bulletSpeed = 15; // Faster bullets
-                this.player.bulletDamage = 2; // More damage
-                break;
             case 'missile':
                 this.player.bulletType = 'missile';
+                this.player.bulletSpeed = 8; // Slower but homing
+                this.player.bulletDamage = 2; // More damage
                 break;
             case 'shield':
                 this.player.isInvincible = true;
+                this.player.shieldSprite.visible = true;
                 break;
         }
     }
@@ -75,10 +72,6 @@ export class PowerUpManager {
         switch (type) {
             case 'rapidFire':
                 this.player.fireRate = 250; // Normal firing rate
-                break;
-            case 'laser':
-                this.player.bulletSpeed = 10; // Normal bullet speed
-                this.player.bulletDamage = 1; // Normal damage
                 break;
             case 'missile':
                 this.player.bulletType = 'normal';

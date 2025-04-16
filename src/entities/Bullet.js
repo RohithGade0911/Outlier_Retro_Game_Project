@@ -1,31 +1,34 @@
 import * as PIXI from 'pixi.js';
 
 export class Bullet {
-    constructor(app, x, y, speed = 10) {
+    constructor(app, x, y, speed = 10, damage = 1) {
         this.app = app;
-        this.speed = speed;
         this.active = true;
+        this.damage = damage;
         
-        // Create bullet sprite (temporary pixel-art style)
+        // Create bullet sprite
         this.sprite = new PIXI.Graphics();
         this.sprite.beginFill(0xFFFFFF);
-        this.sprite.drawRect(-2, -8, 4, 16);
+        this.sprite.drawCircle(0, 0, 3);
         this.sprite.endFill();
         
         // Position bullet
         this.sprite.x = x;
         this.sprite.y = y;
         
-        // Add bullet to stage
+        // Add to stage
         this.app.stage.addChild(this.sprite);
+        
+        // Movement
+        this.speed = speed;
     }
     
     update() {
         // Move bullet upward
         this.sprite.y -= this.speed;
         
-        // Check if bullet is out of bounds
-        if (this.sprite.y < -20) {
+        // Remove if off screen
+        if (this.sprite.y < -10) {
             this.destroy();
         }
     }

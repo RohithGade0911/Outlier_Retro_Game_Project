@@ -4,43 +4,92 @@ import { Background } from '../entities/Background';
 import { EnemyManager } from '../managers/EnemyManager';
 import { PowerUpManager } from '../managers/PowerUpManager';
 import { UIManager } from '../ui/UIManager';
+import { AssetManager } from '../managers/AssetManager';
+import { LoadingScreen } from '../ui/LoadingScreen';
+import { EventEmitter } from '../utils/EventEmitter';
 
-export class Game {
+export class Game extends EventEmitter {
     constructor(app) {
+        super();
         this.app = app;
         this.player = null;
         this.background = null;
         this.enemyManager = null;
         this.powerUpManager = null;
         this.uiManager = null;
+        this.assetManager = null;
+        this.loadingScreen = null;
         this.gameLoop = this.gameLoop.bind(this);
         this.keys = {};
-        this.gameState = 'playing'; // 'playing', 'gameOver', 'paused'
+        this.gameState = 'loading'; // 'loading', 'start', 'playing', 'gameOver', 'paused'
+        this.score = 0;
+        this.lives = 3;
+        this.wave = 1;
+        this.highScore = localStorage.getItem('highScore') || 0;
         this.setupKeyboardListeners();
         this.initGame();
-        this.gameLoop();
     }
 
-    initGame() {
-        // Create background
-        this.background = new Background(this.app);
+    async initGame() {
+        // Create loading screen
+        this.loadingScreen = new LoadingScreen(this.app);
         
-        // Create player
-        this.player = new Player(this.app);
-        this.app.stage.addChild(this.player.sprite);
+        // Create asset manager
+        this.assetManager = new AssetManager(this.app);
         
-        // Create managers
-        this.enemyManager = new EnemyManager(this.app);
-        this.powerUpManager = new PowerUpManager(this.app, this.player);
-        this.uiManager = new UIManager(this.app);
+        // Define assets to load
+        const assetsToLoad = [
+            { name: 'player', url: 'assets/images/player.png' },
+            { name: 'enemy1', url: 'assets/images/enemy1.png' },
+            { name: 'enemy2', url: 'assets/images/enemy2.png' },
+            { name: 'powerup1', url: 'assets/images/powerup1.png' },
+            { name: 'powerup2', url: 'assets/images/powerup2.png' },
+            { name: 'background', url: 'assets/images/background.png' }
+        ];
         
-        // Reset game state
-        this.gameState = 'playing';
+        try {
+            // Load assets with progress callback
+            await this.assetManager.loadAssets(assetsToLoad, (progress) => {
+                this.loadingScreen.updateProgress(progress);
+            });
+            
+            // Hide loading screen
+            this.loadingScreen.hide();
+            
+            // Create background
+            this.background = new Background(this.app);
+            
+            // Create player
+            this.player = new Player(this.app);
+            this.app.stage.addChild(this.player.sprite);
+            
+            // Create managers
+            this.enemyManager = new EnemyManager(this.app, this.player);
+            this.powerUpManager = new PowerUpManager(this.app, this.player);
+            this.uiManager = new UIManager(this);
+            
+            // Set up event listeners for UI interactions
+            this.setupUIEventListeners();
+            
+            // Set game state to start
+            this.gameState = 'start';
+            
+            // Start game loop
+            this.gameLoop();
+        } catch (error) {
+            console.error('Failed to load assets:', error);
+            // Show error message to user
+        }
     }
 
     setupKeyboardListeners() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.key] = true;
+            
+            // Start game on Enter key
+            if (e.key === 'Enter' && this.gameState === 'start') {
+                this.startGame();
+            }
             
             // Restart game on 'R' key
             if (e.key === 'r' && this.gameState === 'gameOver') {
@@ -48,14 +97,41 @@ export class Game {
             }
             
             // Pause game on 'P' key
-            if (e.key === 'p') {
-                this.togglePause();
+            if (e.key === 'p' && this.gameState === 'playing') {
+                this.pauseGame();
+            }
+            
+            // Resume game on 'P' key
+            if (e.key === 'p' && this.gameState === 'paused') {
+                this.resumeGame();
             }
         });
 
         window.addEventListener('keyup', (e) => {
             this.keys[e.key] = false;
         });
+    }
+    
+    setupUIEventListeners() {
+        // Listen for game start event from UI
+        this.on('gameStart', () => {
+            this.startGame();
+        });
+        
+        // Listen for game resume event from UI
+        this.on('gameResume', () => {
+            this.resumeGame();
+        });
+        
+        // Listen for game restart event from UI
+        this.on('gameRestart', () => {
+            this.restartGame();
+        });
+    }
+    
+    startGame() {
+        this.gameState = 'playing';
+        this.uiManager.hideStartScreen();
     }
     
     restartGame() {
@@ -66,24 +142,35 @@ export class Game {
         this.initGame();
     }
     
-    togglePause() {
-        if (this.gameState === 'playing') {
-            this.gameState = 'paused';
-            // In a full game, we would show a pause menu here
-        } else if (this.gameState === 'paused') {
-            this.gameState = 'playing';
-            // In a full game, we would hide the pause menu here
-        }
+    pauseGame() {
+        this.gameState = 'paused';
+        this.uiManager.createPauseMenu();
+    }
+    
+    resumeGame() {
+        this.gameState = 'playing';
+        this.uiManager.hidePauseMenu();
     }
     
     gameOver() {
         this.gameState = 'gameOver';
-        this.uiManager.showGameOver();
+        
+        // Update high score if needed
+        if (this.score > this.highScore) {
+            this.highScore = this.score;
+            localStorage.setItem('highScore', this.highScore);
+        }
+        
+        // Show game over screen
+        this.uiManager.showGameOver(this.score, this.highScore);
     }
 
     gameLoop() {
-        // Skip updates if game is paused or over
-        if (this.gameState !== 'playing') return;
+        // Skip updates if game is not in playing state
+        if (this.gameState !== 'playing') {
+            requestAnimationFrame(() => this.gameLoop());
+            return;
+        }
         
         // Update background
         if (this.background) {
@@ -96,11 +183,13 @@ export class Game {
             
             // Check for player-enemy collisions
             if (this.enemyManager.checkPlayerCollision(this.player)) {
-                this.player.hit();
-                this.uiManager.updateLives(this.player.lives);
-                
-                if (this.player.lives <= 0) {
-                    this.gameOver();
+                if (this.player.hit()) {
+                    this.uiManager.updateLives(this.player.lives);
+                    
+                    if (this.player.lives <= 0) {
+                        this.gameOver();
+                        return;
+                    }
                 }
             }
         }
@@ -112,14 +201,34 @@ export class Game {
             // Check for bullet-enemy collisions
             const score = this.enemyManager.checkCollisions(this.player.bullets);
             if (score > 0) {
-                this.uiManager.updateScore(score);
+                this.score += score;
+                this.uiManager.updateScore(this.score);
             }
             
-            // Check if wave is complete
-            if (this.enemyManager.waveComplete) {
-                this.uiManager.showWaveComplete();
-                this.enemyManager.startNextWave();
-                this.uiManager.updateWave(this.enemyManager.wave);
+            // Update wave number in UI
+            this.uiManager.updateWave(this.enemyManager.wave);
+            
+            // Check if wave is complete and no transition is in progress
+            if (!this.enemyManager.waveTransitionInProgress && 
+                this.enemyManager.enemiesSpawned >= this.enemyManager.enemiesPerWave && 
+                this.enemyManager.enemies.length === 0) {
+                
+                // Store the current wave number
+                const currentWave = this.enemyManager.wave;
+                
+                // Show wave complete message
+                this.uiManager.showWaveComplete(currentWave);
+                
+                // Show wave announcement and start next wave after delays
+                setTimeout(() => {
+                    // Show wave announcement for the next wave
+                    this.uiManager.showWaveAnnouncement(currentWave + 1);
+                    
+                    // Start next wave after announcement
+                    setTimeout(() => {
+                        this.enemyManager.startNextWave();
+                    }, 3000);
+                }, 2000);
             }
         }
         
@@ -137,6 +246,7 @@ export class Game {
             }
         }
         
+        // Continue game loop
         requestAnimationFrame(() => this.gameLoop());
     }
 } 

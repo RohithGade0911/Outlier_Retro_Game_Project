@@ -26,6 +26,7 @@ export class Enemy {
             case 'bomber': return 2;
             case 'feather': return 1;
             case 'ufo': return 3;
+            case 'boss': return 20;
             default: return 1;
         }
     }
@@ -36,6 +37,7 @@ export class Enemy {
             case 'bomber': return 0.7;
             case 'feather': return 1.5;
             case 'ufo': return 0.5;
+            case 'boss': return 0.3;
             default: return 1;
         }
     }
@@ -46,6 +48,7 @@ export class Enemy {
             case 'bomber': return 200;
             case 'feather': return 150;
             case 'ufo': return 300;
+            case 'boss': return 1000;
             default: return 100;
         }
     }
@@ -109,6 +112,37 @@ export class Enemy {
                 sprite.endFill();
                 break;
                 
+            case 'boss':
+                // Create a larger, more complex boss chicken
+                // Main body
+                sprite.beginFill(0xFF4500);
+                sprite.drawCircle(0, 0, 40);
+                sprite.endFill();
+                
+                // Boss chicken face
+                sprite.beginFill(0xFFD700);
+                sprite.drawCircle(-15, -15, 15);
+                sprite.drawCircle(15, -15, 15);
+                sprite.endFill();
+                
+                // Boss eyes
+                sprite.beginFill(0x000000);
+                sprite.drawCircle(-15, -15, 5);
+                sprite.drawCircle(15, -15, 5);
+                sprite.endFill();
+                
+                // Boss beak
+                sprite.beginFill(0xFF8C00);
+                sprite.drawPolygon([0, 0, -20, 20, 20, 20]);
+                sprite.endFill();
+                
+                // Boss wings
+                sprite.beginFill(0x8B0000);
+                sprite.drawPolygon([-40, 0, -60, -20, -20, 0]);
+                sprite.drawPolygon([40, 0, 60, -20, 20, 0]);
+                sprite.endFill();
+                break;
+                
             default:
                 // Default chicken
                 sprite.beginFill(0xFFD700);
@@ -120,26 +154,55 @@ export class Enemy {
     }
     
     update() {
-        // Move enemy downward
+        // Move straight down
         this.sprite.y += this.speed;
         
         // Check if enemy is out of bounds
-        if (this.sprite.y > this.app.screen.height + 30) {
+        if (this.sprite.y > this.app.screen.height + 30 || 
+            this.sprite.x < -30 || 
+            this.sprite.x > this.app.screen.width + 30) {
             this.destroy();
         }
     }
     
-    takeDamage() {
-        this.health--;
+    takeDamage(damage = 1) {
+        this.health -= damage;
+        
+        // Create hit effect
+        this.createHitEffect();
+        
         if (this.health <= 0) {
             this.destroy();
             return this.score;
         }
+        
         return 0;
+    }
+    
+    createHitEffect() {
+        // Create a small hit effect
+        const hitEffect = new PIXI.Graphics();
+        hitEffect.beginFill(0xFFFFFF);
+        hitEffect.drawCircle(0, 0, 5);
+        hitEffect.endFill();
+        
+        hitEffect.x = this.sprite.x;
+        hitEffect.y = this.sprite.y;
+        
+        this.app.stage.addChild(hitEffect);
+        
+        // Remove hit effect after a short time
+        setTimeout(() => {
+            if (hitEffect.parent) {
+                this.app.stage.removeChild(hitEffect);
+            }
+        }, 100);
     }
     
     destroy() {
         this.active = false;
-        this.app.stage.removeChild(this.sprite);
+        if (this.sprite.parent) {
+            this.app.stage.removeChild(this.sprite);
+        }
     }
 } 

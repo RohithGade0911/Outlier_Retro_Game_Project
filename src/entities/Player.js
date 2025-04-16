@@ -14,9 +14,11 @@ export class Player {
         this.invincibleDuration = 120; // 2 seconds at 60 FPS
         
         // Power-up states
-        this.laserActive = false;
-        this.missileActive = false;
-        this.shieldActive = false;
+        this.fireRate = 250; // Default fire rate in milliseconds
+        this.bulletSpeed = 10; // Default bullet speed
+        this.bulletDamage = 1; // Default bullet damage
+        this.bulletType = 'normal'; // Default bullet type
+        this.isInvincible = false; // Shield state
         
         // Create player sprite (improved pixel-art style)
         this.sprite = new PIXI.Graphics();
@@ -46,6 +48,9 @@ export class Player {
         // Position player at bottom center
         this.sprite.x = app.screen.width / 2;
         this.sprite.y = app.screen.height - 50;
+        
+        // Last shot time for rapid fire
+        this.lastShotTime = 0;
     }
 
     update(keys) {
@@ -62,7 +67,7 @@ export class Player {
         }
         
         // Update shield visibility
-        this.shieldSprite.visible = this.shieldActive;
+        this.shieldSprite.visible = this.isInvincible;
         
         // Movement
         if (keys['ArrowLeft'] || keys['a']) {
@@ -78,15 +83,11 @@ export class Player {
             this.sprite.y = Math.min(this.app.screen.height - 15, this.sprite.y + this.speed);
         }
 
-        // Shooting
-        if (keys[' '] && this.shootCooldown <= 0) {
+        // Shooting with rapid fire support
+        const currentTime = Date.now();
+        if (keys[' '] && currentTime - this.lastShotTime >= this.fireRate) {
             this.shoot();
-            this.shootCooldown = this.shootDelay;
-        }
-
-        // Update shoot cooldown
-        if (this.shootCooldown > 0) {
-            this.shootCooldown--;
+            this.lastShotTime = currentTime;
         }
         
         // Update bullets
@@ -104,46 +105,93 @@ export class Player {
     }
 
     shoot() {
-        if (this.laserActive) {
-            // Shoot laser (wide beam)
-            this.shootLaser();
-        } else if (this.missileActive) {
-            // Shoot missile (homing)
-            this.shootMissile();
-        } else {
-            // Shoot normal bullet
-            this.shootNormalBullet();
+        let score = 0;
+        
+        switch (this.bulletType) {
+            case 'laser':
+                score = this.shootLaser();
+                break;
+            case 'missile':
+                this.shootMissile();
+                break;
+            default:
+                this.shootNormalBullet();
+                break;
         }
+        
+        // Return score for UI update
+        return score;
     }
     
     shootNormalBullet() {
-        // Create new bullet
-        const bullet = new Bullet(this.app, this.sprite.x, this.sprite.y - 20);
+        const bullet = new Bullet(this.app, this.sprite.x, this.sprite.y - 20, this.bulletSpeed, this.bulletDamage);
         this.bullets.push(bullet);
     }
     
     shootLaser() {
-        // Create wide laser beam
-        const laserWidth = 40;
-        const laserHeight = 600;
+        console.log("Shooting laser!");
         
-        // Create laser sprite
-        const laser = new PIXI.Graphics();
-        laser.beginFill(0x00FFFF);
-        laser.drawRect(-laserWidth / 2, -laserHeight, laserWidth, laserHeight);
-        laser.endFill();
+        // Create a container for the laser
+        const laserContainer = new PIXI.Container();
+        laserContainer.zIndex = 100; // Ensure laser is on top
         
-        // Position laser at player's position
-        laser.x = this.sprite.x;
-        laser.y = this.sprite.y - laserHeight / 2;
+        // Create the main laser beam
+        const laserBeam = new PIXI.Graphics();
+        laserBeam.beginFill(0x00FFFF);
+        laserBeam.drawRect(-20, -600, 40, 600);
+        laserBeam.endFill();
         
-        // Add laser to stage
-        this.app.stage.addChild(laser);
+        // Create a glow effect
+        const laserGlow = new PIXI.Graphics();
+        laserGlow.beginFill(0x00FFFF, 0.5); // Increased opacity
+        laserGlow.drawRect(-30, -600, 60, 600);
+        laserGlow.endFill();
+        
+        // Add both to the container
+        laserContainer.addChild(laserGlow);
+        laserContainer.addChild(laserBeam);
+        
+        // Position the laser container at the player's position
+        laserContainer.x = this.sprite.x;
+        laserContainer.y = this.sprite.y;
+        
+        // Add the laser container to the stage
+        this.app.stage.addChild(laserContainer);
+        
+        // Create a hitbox for collision detection
+        const laserHitbox = {
+            x: this.sprite.x - 20,
+            y: 0,
+            width: 40,
+            height: 600
+        };
+        
+        // Damage all enemies in the laser path
+        const enemies = this.app.stage.children.filter(child => child.isEnemy);
+        let score = 0;
+        
+        for (const enemy of enemies) {
+            // Check if enemy is within the laser hitbox
+            if (enemy.x >= laserHitbox.x && 
+                enemy.x <= laserHitbox.x + laserHitbox.width && 
+                enemy.y >= laserHitbox.y && 
+                enemy.y <= laserHitbox.y + laserHitbox.height) {
+                
+                // Apply damage to enemy
+                if (enemy.takeDamage) {
+                    score += enemy.takeDamage(this.bulletDamage * 2);
+                }
+            }
+        }
         
         // Remove laser after 0.5 seconds
         setTimeout(() => {
-            this.app.stage.removeChild(laser);
+            if (laserContainer.parent) {
+                this.app.stage.removeChild(laserContainer);
+            }
         }, 500);
+        
+        return score;
     }
     
     shootMissile() {
@@ -160,18 +208,93 @@ export class Player {
         // Add missile to stage
         this.app.stage.addChild(missile);
         
-        // Find closest enemy
-        let closestEnemy = null;
-        let closestDistance = Infinity;
+        // Create a bullet object for the missile
+        const missileBullet = new Bullet(this.app, this.sprite.x, this.sprite.y - 20, 0, this.bulletDamage * 2);
+        missileBullet.sprite = missile; // Replace the bullet sprite with our missile sprite
+        missileBullet.isMissile = true;
+        missileBullet.active = true;
         
-        // This would be replaced with actual enemy finding logic in the game
-        // For now, we'll just move the missile upward
+        // Add to bullets array so it's checked for collisions
+        this.bullets.push(missileBullet);
+        
+        // Find closest enemy and move towards it
         const moveMissile = () => {
-            missile.y -= 5;
+            if (!missileBullet.active) return;
+            
+            // Get all enemies from the game
+            const enemies = this.app.stage.children.filter(child => child.isEnemy);
+            
+            if (enemies.length > 0) {
+                // Find closest enemy
+                let closestEnemy = null;
+                let closestDistance = Infinity;
+                
+                for (const enemy of enemies) {
+                    const dx = enemy.x - missile.x;
+                    const dy = enemy.y - missile.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                }
+                
+                // Move towards closest enemy
+                if (closestEnemy) {
+                    const dx = closestEnemy.x - missile.x;
+                    const dy = closestEnemy.y - missile.y;
+                    const angle = Math.atan2(dy, dx);
+                    
+                    // Update both missile and bullet positions
+                    missile.x += Math.cos(angle) * 5;
+                    missile.y += Math.sin(angle) * 5;
+                    missileBullet.sprite.x = missile.x;
+                    missileBullet.sprite.y = missile.y;
+                    
+                    // Check for collision with the target enemy
+                    const collisionDistance = Math.sqrt(
+                        Math.pow(missile.x - closestEnemy.x, 2) + 
+                        Math.pow(missile.y - closestEnemy.y, 2)
+                    );
+                    
+                    if (collisionDistance < 20) { // Collision radius
+                        // Apply damage to enemy
+                        if (closestEnemy.takeDamage) {
+                            closestEnemy.takeDamage(missileBullet.damage);
+                        }
+                        
+                        // Create explosion effect
+                        const explosion = new PIXI.Graphics();
+                        explosion.beginFill(0xFFA500);
+                        explosion.drawCircle(0, 0, 10);
+                        explosion.endFill();
+                        explosion.x = missile.x;
+                        explosion.y = missile.y;
+                        this.app.stage.addChild(explosion);
+                        
+                        // Remove explosion after 0.3 seconds
+                        setTimeout(() => {
+                            if (explosion.parent) {
+                                this.app.stage.removeChild(explosion);
+                            }
+                        }, 300);
+                        
+                        // Destroy missile
+                        missileBullet.destroy();
+                        return;
+                    }
+                }
+            } else {
+                // No enemies, move upward
+                missile.y -= 5;
+                missileBullet.sprite.y = missile.y;
+            }
             
             // Remove missile if it goes off screen
-            if (missile.y < -20) {
-                this.app.stage.removeChild(missile);
+            if (missile.y < -20 || missile.y > this.app.screen.height + 20 ||
+                missile.x < -20 || missile.x > this.app.screen.width + 20) {
+                missileBullet.destroy();
                 return;
             }
             
@@ -184,7 +307,7 @@ export class Player {
     
     hit() {
         // If shield is active, don't take damage
-        if (this.shieldActive) {
+        if (this.isInvincible) {
             return false;
         }
         
@@ -199,15 +322,14 @@ export class Player {
     
     reset() {
         this.lives = 3;
-        this.sprite.x = this.app.screen.width / 2;
-        this.sprite.y = this.app.screen.height - 50;
         this.invincible = false;
-        this.sprite.alpha = 1;
-        
-        // Reset power-up states
-        this.laserActive = false;
-        this.missileActive = false;
-        this.shieldActive = false;
+        this.invincibleTimer = 0;
+        this.bullets = [];
+        this.fireRate = 250;
+        this.bulletSpeed = 10;
+        this.bulletDamage = 1;
+        this.bulletType = 'normal';
+        this.isInvincible = false;
         this.shieldSprite.visible = false;
     }
 } 
