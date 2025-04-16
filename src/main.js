@@ -1,8 +1,8 @@
 import * as PIXI from 'pixi.js';
 import { Game } from './core/Game';
 
-// Wait for the DOM to be fully loaded
-window.addEventListener('DOMContentLoaded', () => {
+// Function to initialize the game
+function initGame() {
     // Create PIXI Application
     const app = new PIXI.Application({
         width: 1200,
@@ -16,4 +16,17 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Initialize the game with the PIXI application
     const game = new Game(app);
+}
+
+// Wait for the DOM and fonts to be fully loaded
+window.addEventListener('DOMContentLoaded', () => {
+    // Check if fonts are already loaded
+    if (document.fonts.status === 'loaded') {
+        initGame();
+    } else {
+        // Wait for fonts to load
+        document.fonts.ready.then(() => {
+            initGame();
+        });
+    }
 }); 
