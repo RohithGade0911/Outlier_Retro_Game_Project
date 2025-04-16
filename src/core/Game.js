@@ -5,7 +5,6 @@ import { EnemyManager } from '../managers/EnemyManager';
 import { PowerUpManager } from '../managers/PowerUpManager';
 import { UIManager } from '../ui/UIManager';
 import { AssetManager } from '../managers/AssetManager';
-import { LoadingScreen } from '../ui/LoadingScreen';
 import { EventEmitter } from '../utils/EventEmitter';
 
 export class Game extends EventEmitter {
@@ -18,28 +17,26 @@ export class Game extends EventEmitter {
         this.powerUpManager = null;
         this.uiManager = null;
         this.assetManager = null;
-        this.loadingScreen = null;
         this.gameLoop = this.gameLoop.bind(this);
         this.keys = {};
-        this.gameState = 'loading'; // 'loading', 'start', 'playing', 'gameOver', 'paused'
+        this.gameState = 'start'; // Changed from 'loading' to 'start'
         this.score = 0;
         this.lives = 3;
         this.wave = 1;
         this.highScore = localStorage.getItem('highScore') || 0;
         this.setupKeyboardListeners();
         this.initGame();
+        
+        this.uiManager.on('gameStart', () => this.startGame());
+        this.uiManager.on('gameRestart', () => this.restartGame());
     }
 
     async initGame() {
-        // Create loading screen
-        this.loadingScreen = new LoadingScreen(this.app);
-        
         // Create asset manager
         this.assetManager = new AssetManager(this.app);
         
         // Define assets to load
         const assetsToLoad = [
-            { name: 'player', url: 'assets/images/player.png' },
             { name: 'enemy1', url: 'assets/images/enemy1.png' },
             { name: 'enemy2', url: 'assets/images/enemy2.png' },
             { name: 'powerup1', url: 'assets/images/powerup1.png' },
@@ -48,13 +45,8 @@ export class Game extends EventEmitter {
         ];
         
         try {
-            // Load assets with progress callback
-            await this.assetManager.loadAssets(assetsToLoad, (progress) => {
-                this.loadingScreen.updateProgress(progress);
-            });
-            
-            // Hide loading screen
-            this.loadingScreen.hide();
+            // Load assets
+            await this.assetManager.loadAssets(assetsToLoad);
             
             // Create background
             this.background = new Background(this.app);
@@ -70,9 +62,6 @@ export class Game extends EventEmitter {
             
             // Set up event listeners for UI interactions
             this.setupUIEventListeners();
-            
-            // Set game state to start
-            this.gameState = 'start';
             
             // Start game loop
             this.gameLoop();
@@ -135,11 +124,49 @@ export class Game extends EventEmitter {
     }
     
     restartGame() {
-        // Remove all game objects
-        this.app.stage.removeChildren();
+        // Hide game over screen first
+        if (this.uiManager) {
+            this.uiManager.hideGameOverScreen();
+        }
         
-        // Reinitialize game
-        this.initGame();
+        // Reset game state
+        this.score = 0;
+        this.lives = 3;
+        this.gameState = 'playing';
+        
+        // Clear all entities
+        if (this.player) {
+            // Clear player's bullets
+            this.player.bullets.forEach(bullet => {
+                bullet.destroy();
+            });
+            this.player.bullets = [];
+            this.player.reset();
+        }
+        
+        if (this.enemyManager) {
+            this.enemyManager.clearEnemies();
+            
+            // Directly set wave to 1 without calling startNextWave
+            this.enemyManager.wave = 1;
+            this.enemyManager.isBossWave = false;
+            this.enemyManager.difficultyMultiplier = 1;
+            this.enemyManager.enemiesSpawned = 0;
+            this.enemyManager.spawnDelay = 60;
+            this.enemyManager.spawnTimer = 0;
+            this.enemyManager.waveTransitionInProgress = false;
+        }
+        
+        if (this.powerUpManager) {
+            this.powerUpManager.clearPowerUps();
+        }
+        
+        // Update UI
+        if (this.uiManager) {
+            this.uiManager.updateScore(this.score);
+            this.uiManager.updateLives(this.lives);
+            this.uiManager.updateWave(1);
+        }
     }
     
     pauseGame() {

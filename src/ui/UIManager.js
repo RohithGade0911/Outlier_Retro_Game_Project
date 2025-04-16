@@ -13,6 +13,7 @@ export class UIManager {
         this.gameOverScreen = null;
         this.waveCompleteText = null;
         this.waveAnnouncementText = null;
+        this.restartButton = null;
         this.initUI();
     }
 
@@ -49,6 +50,9 @@ export class UIManager {
 
         // Create power-up indicators
         this.createPowerUpIndicators();
+
+        // Create restart button
+        this.createRestartButton();
 
         // Create start screen
         this.createStartScreen();
@@ -105,6 +109,45 @@ export class UIManager {
             this.app.stage.addChild(container);
             yOffset += 40;
         }
+    }
+
+    createRestartButton() {
+        // Create a container for the restart button
+        this.restartButton = new PIXI.Container();
+        
+        // Create button background
+        const buttonBg = new PIXI.Graphics();
+        buttonBg.beginFill(0xff0000);
+        buttonBg.drawCircle(0, 0, 20);
+        buttonBg.endFill();
+        
+        // Create restart icon (circular arrow)
+        const icon = new PIXI.Graphics();
+        icon.lineStyle(3, 0xffffff);
+        icon.arc(0, 0, 12, 0, Math.PI * 1.5, false);
+        icon.moveTo(8, -8);
+        icon.lineTo(12, -12);
+        icon.lineTo(8, -16);
+        
+        // Add elements to container
+        this.restartButton.addChild(buttonBg, icon);
+        
+        // Position the button in the top right corner
+        this.restartButton.position.set(
+            this.app.screen.width - 40,
+            40
+        );
+        
+        // Make button interactive
+        this.restartButton.eventMode = 'static';
+        this.restartButton.cursor = 'pointer';
+        this.restartButton.on('pointerdown', () => {
+            // Refresh the page to restart the game
+            window.location.reload();
+        });
+        
+        // Add to stage
+        this.app.stage.addChild(this.restartButton);
     }
 
     createStartScreen() {
@@ -269,7 +312,8 @@ export class UIManager {
             this.app.screen.height / 2 + 100
         );
         restartButton.on('pointerdown', () => {
-            this.game.emit('gameRestart');
+            // Refresh the page to restart the game
+            window.location.reload();
         });
         
         this.gameOverScreen.addChild(background, title, scoreText, highScoreText, restartButton);
@@ -326,7 +370,7 @@ export class UIManager {
         });
         waveText.position.set(150 - waveText.width / 2, 20);
         
-        // Create "Starting..." text
+        // Create "Starting..." text with flickering effect
         const startingText = new PIXI.Text('Starting...', {
             fontFamily: 'Arial',
             fontSize: 24,
@@ -334,6 +378,13 @@ export class UIManager {
             align: 'center'
         });
         startingText.position.set(150 - startingText.width / 2, 70);
+        
+        // Add flickering effect to "Starting..." text
+        let alpha = 1;
+        const flickerInterval = setInterval(() => {
+            alpha = alpha === 1 ? 0.3 : 1;
+            startingText.alpha = alpha;
+        }, 200);
         
         // Add elements to container
         this.waveAnnouncementText.addChild(background, waveText, startingText);
@@ -347,8 +398,9 @@ export class UIManager {
         // Add to stage
         this.app.stage.addChild(this.waveAnnouncementText);
         
-        // Remove after 3 seconds
+        // Remove after 3 seconds and clear the flickering interval
         setTimeout(() => {
+            clearInterval(flickerInterval);
             if (this.waveAnnouncementText && this.waveAnnouncementText.parent) {
                 this.app.stage.removeChild(this.waveAnnouncementText);
                 this.waveAnnouncementText = null;
@@ -390,6 +442,13 @@ export class UIManager {
         if (this.pauseMenu && this.pauseMenu.parent) {
             this.app.stage.removeChild(this.pauseMenu);
             this.pauseMenu = null;
+        }
+    }
+
+    hideGameOverScreen() {
+        if (this.gameOverScreen && this.gameOverScreen.parent) {
+            this.app.stage.removeChild(this.gameOverScreen);
+            this.gameOverScreen = null;
         }
     }
 } 

@@ -13,6 +13,7 @@ export class EnemyManager {
         this.isBossWave = false;
         this.maxEnemiesPerWave = 30;
         this.waveTransitionInProgress = false;
+        this.enemiesDefeated = 0;
     }
 
     startNextWave() {
@@ -92,6 +93,7 @@ export class EnemyManager {
             
             if (!enemy.active) {
                 this.enemies.splice(i, 1);
+                this.enemiesDefeated++;
             }
         }
     }
@@ -210,5 +212,19 @@ export class EnemyManager {
                 this.app.stage.removeChild(explosion);
             }
         }, 300);
+    }
+
+    clearEnemies() {
+        // Remove all enemies from the stage
+        this.enemies.forEach(enemy => {
+            enemy.destroy();
+        });
+        this.enemies = [];
+        
+        // Reset wave state
+        this.enemiesSpawned = 0;
+        this.enemiesDefeated = 0;
+        this.spawnDelay = 60;
+        this.spawnTimer = 0;
     }
 } 

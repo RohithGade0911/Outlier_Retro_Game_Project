@@ -131,4 +131,16 @@ export class PowerUpManager {
         const distance = Math.sqrt(dx * dx + dy * dy);
         return distance < 30; // Collision radius
     }
+    
+    clearPowerUps() {
+        // Remove all power-ups from the stage
+        this.powerUps.forEach(powerUp => {
+            powerUp.destroy();
+        });
+        this.powerUps = [];
+        
+        // Reset all active power-ups
+        this.activePowerUps = {};
+        this.powerUpTimers = {};
+    }
 } 
