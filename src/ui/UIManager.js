@@ -20,30 +20,33 @@ export class UIManager {
     initUI() {
         // Create score text
         this.scoreText = new PIXI.Text('Score: 0', {
-            fontFamily: 'Arial',
-            fontSize: 24,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 16,
             fill: 0xffffff,
-            align: 'left'
+            align: 'left',
+            letterSpacing: 2
         });
         this.scoreText.position.set(10, 10);
         this.app.stage.addChild(this.scoreText);
 
         // Create lives text
         this.livesText = new PIXI.Text('Lives: 3', {
-            fontFamily: 'Arial',
-            fontSize: 24,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 16,
             fill: 0xffffff,
-            align: 'left'
+            align: 'left',
+            letterSpacing: 2
         });
         this.livesText.position.set(10, 40);
         this.app.stage.addChild(this.livesText);
 
         // Create wave text
         this.waveText = new PIXI.Text('Wave: 1', {
-            fontFamily: 'Arial',
-            fontSize: 24,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 16,
             fill: 0xffffff,
-            align: 'left'
+            align: 'left',
+            letterSpacing: 2
         });
         this.waveText.position.set(10, 70);
         this.app.stage.addChild(this.waveText);
@@ -61,44 +64,45 @@ export class UIManager {
     createPowerUpIndicators() {
         const powerUpTypes = {
             rapidFire: { color: 0xff0000, name: 'Rapid Fire' },
-            missile: { color: 0xffa500, name: 'Missile' },
             shield: { color: 0x00ff00, name: 'Shield' }
         };
 
-        let yOffset = 100;
+        let yOffset = 140;
         for (const [type, info] of Object.entries(powerUpTypes)) {
             const container = new PIXI.Container();
             
-            // Create indicator background
+            // Create indicator background (reduced by 30%)
             const background = new PIXI.Graphics();
             background.beginFill(0x000000, 0.5);
-            background.drawRoundedRect(0, 0, 150, 30, 5);
+            background.drawRoundedRect(0, 0, 147, 29, 5); // Reduced from 210x42 to 147x29
             background.endFill();
             
-            // Create power-up icon
+            // Create power-up icon (reduced by 30%)
             const icon = new PIXI.Graphics();
             icon.beginFill(info.color);
-            icon.drawCircle(15, 15, 10);
+            icon.drawCircle(15, 15, 10); // Reduced from 21,21,14 to 15,15,10
             icon.endFill();
             
-            // Create power-up name
+            // Create power-up name (reduced font size by 30%)
             const name = new PIXI.Text(info.name, {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fill: 0xffffff
+                fontFamily: '"Press Start 2P"',
+                fontSize: 12, // Reduced from 17
+                fill: 0xffffff,
+                letterSpacing: 1
             });
-            name.position.set(30, 5);
+            name.position.set(29, 5); // Adjusted position for smaller size
             
-            // Create timer text
+            // Create timer text (reduced font size by 30%)
             const timer = new PIXI.Text('', {
-                fontFamily: 'Arial',
-                fontSize: 16,
-                fill: 0xffffff
+                fontFamily: '"Press Start 2P"',
+                fontSize: 12, // Reduced from 17
+                fill: 0xffffff,
+                letterSpacing: 1
             });
-            timer.position.set(120, 5);
+            timer.position.set(118, 5); // Adjusted position for smaller size
             
             container.addChild(background, icon, name, timer);
-            container.position.set(this.app.screen.width - 160, yOffset);
+            container.position.set(this.app.screen.width - 200, yOffset); // Moved 43 pixels to the left from -157
             
             this.powerUpIndicators[type] = {
                 container,
@@ -107,7 +111,7 @@ export class UIManager {
             };
             
             this.app.stage.addChild(container);
-            yOffset += 40;
+            yOffset += 39; // Reduced spacing from 56 to 39
         }
     }
 
@@ -161,14 +165,15 @@ export class UIManager {
         
         // Create title
         const title = new PIXI.Text('Space Shooter', {
-            fontFamily: 'Arial',
-            fontSize: 48,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 45,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 6
         });
         title.position.set(
             this.app.screen.width / 2 - title.width / 2,
-            this.app.screen.height / 2 - 100
+            this.app.screen.height / 2 - 140
         );
         
         // Create start button
@@ -176,23 +181,29 @@ export class UIManager {
         
         const buttonBg = new PIXI.Graphics();
         buttonBg.beginFill(0x00ff00);
-        buttonBg.drawRoundedRect(0, 0, 200, 50, 10);
+        buttonBg.drawRoundedRect(0, 0, 280, 70, 14);
         buttonBg.endFill();
         
         const buttonText = new PIXI.Text('Start Game', {
-            fontFamily: 'Arial',
-            fontSize: 24,
-            fill: 0xffffff
+            fontFamily: '"Press Start 2P"',
+            fontSize: 22,
+            fill: 0xffffff,
+            letterSpacing: 3,
+            align: 'center'
         });
-        buttonText.position.set(50, 10);
+        // Center the text in the button
+        buttonText.position.set(
+            (280 - buttonText.width) / 2,
+            (70 - buttonText.height) / 2
+        );
         
         startButton.addChild(buttonBg, buttonText);
         startButton.position.set(
-            this.app.screen.width / 2 - 100,
-            this.app.screen.height / 2 + 50
+            this.app.screen.width / 2 - 140,
+            this.app.screen.height / 2 + 70
         );
         
-        // Make button interactive using eventMode
+        // Make button interactive
         startButton.eventMode = 'static';
         startButton.cursor = 'pointer';
         startButton.on('pointerdown', () => {
@@ -214,10 +225,11 @@ export class UIManager {
         
         // Create title
         const title = new PIXI.Text('Game Paused', {
-            fontFamily: 'Arial',
-            fontSize: 48,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 32,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 4
         });
         title.position.set(
             this.app.screen.width / 2 - title.width / 2,
@@ -243,15 +255,21 @@ export class UIManager {
         
         const buttonBg = new PIXI.Graphics();
         buttonBg.beginFill(color);
-        buttonBg.drawRoundedRect(0, 0, 200, 50, 10);
+        buttonBg.drawRoundedRect(0, 0, 280, 70, 14);
         buttonBg.endFill();
         
         const buttonText = new PIXI.Text(text, {
-            fontFamily: 'Arial',
-            fontSize: 24,
-            fill: 0xffffff
+            fontFamily: '"Press Start 2P"',
+            fontSize: 22,
+            fill: 0xffffff,
+            letterSpacing: 3,
+            align: 'center'
         });
-        buttonText.position.set(50, 10);
+        // Center the text in the button
+        buttonText.position.set(
+            (280 - buttonText.width) / 2,
+            (70 - buttonText.height) / 2
+        );
         
         button.addChild(buttonBg, buttonText);
         button.eventMode = 'static';
@@ -271,10 +289,11 @@ export class UIManager {
         
         // Create title
         const title = new PIXI.Text('Game Over', {
-            fontFamily: 'Arial',
-            fontSize: 48,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 32,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 4
         });
         title.position.set(
             this.app.screen.width / 2 - title.width / 2,
@@ -283,10 +302,11 @@ export class UIManager {
         
         // Create score text
         const scoreText = new PIXI.Text(`Score: ${score}`, {
-            fontFamily: 'Arial',
-            fontSize: 32,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 24,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 2
         });
         scoreText.position.set(
             this.app.screen.width / 2 - scoreText.width / 2,
@@ -295,10 +315,11 @@ export class UIManager {
         
         // Create high score text
         const highScoreText = new PIXI.Text(`High Score: ${highScore}`, {
-            fontFamily: 'Arial',
-            fontSize: 32,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 24,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 2
         });
         highScoreText.position.set(
             this.app.screen.width / 2 - highScoreText.width / 2,
@@ -326,10 +347,11 @@ export class UIManager {
         }
         
         this.waveCompleteText = new PIXI.Text(`Wave ${wave} Complete!`, {
-            fontFamily: 'Arial',
-            fontSize: 36,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 24,
             fill: 0x00ff00,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 2
         });
         this.waveCompleteText.position.set(
             this.app.screen.width / 2 - this.waveCompleteText.width / 2,
@@ -338,7 +360,6 @@ export class UIManager {
         
         this.app.stage.addChild(this.waveCompleteText);
         
-        // Remove text after 2 seconds
         setTimeout(() => {
             if (this.waveCompleteText && this.waveCompleteText.parent) {
                 this.app.stage.removeChild(this.waveCompleteText);
@@ -363,19 +384,21 @@ export class UIManager {
         
         // Create wave text
         const waveText = new PIXI.Text(`Wave ${wave}`, {
-            fontFamily: 'Arial',
-            fontSize: 48,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 32,
             fill: 0xffffff,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 2
         });
         waveText.position.set(150 - waveText.width / 2, 20);
         
         // Create "Starting..." text with flickering effect
         const startingText = new PIXI.Text('Starting...', {
-            fontFamily: 'Arial',
-            fontSize: 24,
+            fontFamily: '"Press Start 2P"',
+            fontSize: 16,
             fill: 0xffff00,
-            align: 'center'
+            align: 'center',
+            letterSpacing: 2
         });
         startingText.position.set(150 - startingText.width / 2, 70);
         
@@ -398,10 +421,10 @@ export class UIManager {
         // Add to stage
         this.app.stage.addChild(this.waveAnnouncementText);
         
-        // Remove after 3 seconds and clear the flickering interval
+        // Remove after 3 seconds
         setTimeout(() => {
-            clearInterval(flickerInterval);
             if (this.waveAnnouncementText && this.waveAnnouncementText.parent) {
+                clearInterval(flickerInterval);
                 this.app.stage.removeChild(this.waveAnnouncementText);
                 this.waveAnnouncementText = null;
             }
@@ -410,14 +433,17 @@ export class UIManager {
 
     updateScore(score) {
         this.scoreText.text = `Score: ${score}`;
+        this.scoreText.style.fontSize = 22;
     }
 
     updateLives(lives) {
         this.livesText.text = `Lives: ${lives}`;
+        this.livesText.style.fontSize = 22;
     }
 
     updateWave(wave) {
         this.waveText.text = `Wave: ${wave}`;
+        this.waveText.style.fontSize = 22;
     }
 
     updatePowerUp(type, isActive, timeLeft) {

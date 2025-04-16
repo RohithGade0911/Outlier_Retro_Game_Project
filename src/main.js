@@ -5,8 +5,8 @@ import { Game } from './core/Game';
 window.addEventListener('DOMContentLoaded', () => {
     // Create PIXI Application
     const app = new PIXI.Application({
-        width: 800,
-        height: 600,
+        width: 1200,
+        height: 840,
         backgroundColor: 0x000000,
         resolution: window.devicePixelRatio || 1,
     });

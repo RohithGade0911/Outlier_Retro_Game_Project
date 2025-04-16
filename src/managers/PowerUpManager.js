@@ -7,15 +7,13 @@ export class PowerUpManager {
         this.powerUps = [];
         this.spawnTimer = 0;
         this.spawnInterval = 10000; // Spawn power-up every 10 seconds
-        this.powerUpTypes = ['rapidFire', 'missile', 'shield'];
+        this.powerUpTypes = ['rapidFire', 'shield'];
         this.powerUpTimers = {
             rapidFire: 0,
-            missile: 0,
             shield: 0
         };
         this.powerUpDurations = {
             rapidFire: 10000, // 10 seconds
-            missile: 12000,  // 12 seconds
             shield: 15000    // 15 seconds
         };
     }
@@ -42,7 +40,6 @@ export class PowerUpManager {
     getPowerUpColor(type) {
         const colors = {
             rapidFire: 0xFF0000, // Red
-            missile: 0xFFA500,   // Orange
             shield: 0x00FF00     // Green
         };
         return colors[type];
@@ -56,11 +53,6 @@ export class PowerUpManager {
             case 'rapidFire':
                 this.player.fireRate = 100; // Faster firing
                 break;
-            case 'missile':
-                this.player.bulletType = 'missile';
-                this.player.bulletSpeed = 8; // Slower but homing
-                this.player.bulletDamage = 2; // More damage
-                break;
             case 'shield':
                 this.player.isInvincible = true;
                 this.player.shieldSprite.visible = true;
@@ -72,9 +64,6 @@ export class PowerUpManager {
         switch (type) {
             case 'rapidFire':
                 this.player.fireRate = 250; // Normal firing rate
-                break;
-            case 'missile':
-                this.player.bulletType = 'normal';
                 break;
             case 'shield':
                 this.player.isInvincible = false;

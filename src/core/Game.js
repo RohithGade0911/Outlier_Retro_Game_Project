@@ -39,8 +39,6 @@ export class Game extends EventEmitter {
         const assetsToLoad = [
             { name: 'enemy1', url: 'assets/images/enemy1.png' },
             { name: 'enemy2', url: 'assets/images/enemy2.png' },
-            { name: 'powerup1', url: 'assets/images/powerup1.png' },
-            { name: 'powerup2', url: 'assets/images/powerup2.png' },
             { name: 'background', url: 'assets/images/background.png' }
         ];
         
@@ -138,7 +136,9 @@ export class Game extends EventEmitter {
         if (this.player) {
             // Clear player's bullets
             this.player.bullets.forEach(bullet => {
-                bullet.destroy();
+                if (bullet.sprite && bullet.sprite.parent) {
+                    bullet.sprite.parent.removeChild(bullet.sprite);
+                }
             });
             this.player.bullets = [];
             this.player.reset();

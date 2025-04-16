@@ -54,101 +54,54 @@ export class Enemy {
     }
     
     createSpriteByType() {
-        const sprite = new PIXI.Graphics();
+        let sprite;
         
         switch(this.type) {
             case 'standard':
-                // Standard chicken
-                sprite.beginFill(0xFFD700);
-                sprite.drawCircle(0, 0, 15);
-                sprite.endFill();
-                
-                // Chicken face
-                sprite.beginFill(0xFFA500);
-                sprite.drawCircle(-5, -5, 5);
-                sprite.drawCircle(5, -5, 5);
-                sprite.endFill();
-                
-                // Beak
-                sprite.beginFill(0xFF4500);
-                sprite.drawPolygon([0, 5, -5, 10, 5, 10]);
-                sprite.endFill();
+                sprite = PIXI.Sprite.from('assets/images/enemy-standard.png');
+                // Set size for standard enemy
+                sprite.width = 80;
+                sprite.height = 80;
                 break;
                 
             case 'bomber':
-                // Bomber chicken
-                sprite.beginFill(0xFF4500);
-                sprite.drawCircle(0, 0, 20);
-                sprite.endFill();
-                
-                // Bomber details
-                sprite.beginFill(0x8B0000);
-                sprite.drawRect(-10, -5, 20, 10);
-                sprite.endFill();
+                sprite = PIXI.Sprite.from('assets/images/enemy-bomber.png');
+                // Set size for bomber enemy
+                sprite.width = 90;
+                sprite.height = 90;
                 break;
                 
             case 'feather':
-                // Feather chicken
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawCircle(0, 0, 12);
-                sprite.endFill();
-                
-                // Feather details
-                sprite.beginFill(0xDDDDDD);
-                sprite.drawPolygon([-10, 0, -5, -10, 0, 0]);
-                sprite.drawPolygon([10, 0, 5, -10, 0, 0]);
-                sprite.endFill();
+                sprite = PIXI.Sprite.from('assets/images/enemy-feather.png');
+                // Set size for feather enemy
+                sprite.width = 70;
+                sprite.height = 70;
                 break;
                 
             case 'ufo':
-                // UFO chicken
-                sprite.beginFill(0x4169E1);
-                sprite.drawEllipse(0, 0, 25, 10);
-                sprite.endFill();
-                
-                // UFO dome
-                sprite.beginFill(0x87CEEB);
-                sprite.drawEllipse(0, -5, 15, 8);
-                sprite.endFill();
+                sprite = PIXI.Sprite.from('assets/images/enemy-ufo.png');
+                // Set size for UFO enemy
+                sprite.width = 120;
+                sprite.height = 60;
                 break;
                 
             case 'boss':
-                // Create a larger, more complex boss chicken
-                // Main body
-                sprite.beginFill(0xFF4500);
-                sprite.drawCircle(0, 0, 40);
-                sprite.endFill();
-                
-                // Boss chicken face
-                sprite.beginFill(0xFFD700);
-                sprite.drawCircle(-15, -15, 15);
-                sprite.drawCircle(15, -15, 15);
-                sprite.endFill();
-                
-                // Boss eyes
-                sprite.beginFill(0x000000);
-                sprite.drawCircle(-15, -15, 5);
-                sprite.drawCircle(15, -15, 5);
-                sprite.endFill();
-                
-                // Boss beak
-                sprite.beginFill(0xFF8C00);
-                sprite.drawPolygon([0, 0, -20, 20, 20, 20]);
-                sprite.endFill();
-                
-                // Boss wings
-                sprite.beginFill(0x8B0000);
-                sprite.drawPolygon([-40, 0, -60, -20, -20, 0]);
-                sprite.drawPolygon([40, 0, 60, -20, 20, 0]);
-                sprite.endFill();
+                // Use the standard enemy but make it larger
+                sprite = PIXI.Sprite.from('assets/images/enemy-standard.png');
+                // Set size for boss enemy (3x the standard size)
+                sprite.width = 240;
+                sprite.height = 240;
                 break;
                 
             default:
-                // Default chicken
-                sprite.beginFill(0xFFD700);
-                sprite.drawCircle(0, 0, 15);
-                sprite.endFill();
+                sprite = PIXI.Sprite.from('assets/images/enemy-standard.png');
+                // Set default size
+                sprite.width = 80;
+                sprite.height = 80;
         }
+        
+        // Set the anchor point to the center of the sprite
+        sprite.anchor.set(0.5);
         
         return sprite;
     }
@@ -180,11 +133,15 @@ export class Enemy {
     }
     
     createHitEffect() {
-        // Create a small hit effect
-        const hitEffect = new PIXI.Graphics();
-        hitEffect.beginFill(0xFFFFFF);
-        hitEffect.drawCircle(0, 0, 5);
-        hitEffect.endFill();
+        // Create a small hit effect using PNG
+        const hitEffect = PIXI.Sprite.from('assets/images/hit.png');
+        
+        // Set the anchor point to the center of the sprite
+        hitEffect.anchor.set(0.5);
+        
+        // Set the size of the hit effect sprite
+        hitEffect.width = 30;
+        hitEffect.height = 30;
         
         hitEffect.x = this.sprite.x;
         hitEffect.y = this.sprite.y;

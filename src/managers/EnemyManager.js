@@ -162,12 +162,19 @@ export class EnemyManager {
             const distance = Math.sqrt(dx * dx + dy * dy);
             
             if (distance < collisionRadius) {
-                // Create explosion effect
-                this.createExplosionEffect(enemy.sprite.x, enemy.sprite.y);
-                
-                // Player hits enemy
-                enemy.destroy();
-                return true; // Player hit
+                try {
+                    // Create explosion effect
+                    this.createExplosionEffect(enemy.sprite.x, enemy.sprite.y);
+                    
+                    // Player hits enemy
+                    enemy.destroy();
+                    return true; // Player hit
+                } catch (error) {
+                    console.error('Error in collision handling:', error);
+                    // Ensure enemy is still destroyed even if effect creation fails
+                    enemy.destroy();
+                    return true;
+                }
             }
         }
         
@@ -175,11 +182,15 @@ export class EnemyManager {
     }
     
     createHitEffect(x, y) {
-        // Create a small hit effect
-        const hitEffect = new PIXI.Graphics();
-        hitEffect.beginFill(0xFFFFFF);
-        hitEffect.drawCircle(0, 0, 5);
-        hitEffect.endFill();
+        // Create a small hit effect using PNG
+        const hitEffect = PIXI.Sprite.from('assets/images/hit.png');
+        
+        // Set the anchor point to the center of the sprite
+        hitEffect.anchor.set(0.5);
+        
+        // Set the size of the hit effect sprite
+        hitEffect.width = 15;
+        hitEffect.height = 15;
         
         hitEffect.x = x;
         hitEffect.y = y;
@@ -195,23 +206,40 @@ export class EnemyManager {
     }
     
     createExplosionEffect(x, y) {
-        // Create an explosion effect
-        const explosion = new PIXI.Graphics();
-        explosion.beginFill(0xFF4500);
-        explosion.drawCircle(0, 0, 15);
-        explosion.endFill();
-        
-        explosion.x = x;
-        explosion.y = y;
-        
-        this.app.stage.addChild(explosion);
-        
-        // Remove explosion after a short time
-        setTimeout(() => {
-            if (explosion.parent) {
-                this.app.stage.removeChild(explosion);
-            }
-        }, 300);
+        try {
+            // Create explosion container
+            const explosionContainer = new PIXI.Container();
+            explosionContainer.x = x;
+            explosionContainer.y = y;
+            
+            // Create explosion graphics
+            const explosion = new PIXI.Graphics();
+            explosion.beginFill(0xFF0000, 0.8);
+            explosion.drawCircle(0, 0, 20);
+            explosion.endFill();
+            
+            // Add glow effect
+            const glow = new PIXI.Graphics();
+            glow.beginFill(0xFF0000, 0.4);
+            glow.drawCircle(0, 0, 30);
+            glow.endFill();
+            
+            // Add effects to container
+            explosionContainer.addChild(glow);
+            explosionContainer.addChild(explosion);
+            
+            // Add to stage
+            this.app.stage.addChild(explosionContainer);
+            
+            // Remove after animation
+            setTimeout(() => {
+                if (explosionContainer && explosionContainer.parent) {
+                    explosionContainer.parent.removeChild(explosionContainer);
+                }
+            }, 300);
+        } catch (error) {
+            console.error('Error creating explosion effect:', error);
+        }
     }
 
     clearEnemies() {

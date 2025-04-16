@@ -6,10 +6,10 @@ export class Bullet {
         this.active = true;
         this.damage = damage;
         
-        // Create bullet sprite
+        // Create bullet using Graphics instead of PNG
         this.sprite = new PIXI.Graphics();
-        this.sprite.beginFill(0xFFFFFF);
-        this.sprite.drawCircle(0, 0, 3);
+        this.sprite.beginFill(0xFFFFFF); // White color
+        this.sprite.drawCircle(0, 0, 10); // Draw a circle with radius 10
         this.sprite.endFill();
         
         // Position bullet
@@ -34,7 +34,9 @@ export class Bullet {
     }
     
     destroy() {
+        if (this.sprite && this.sprite.parent) {
+            this.sprite.parent.removeChild(this.sprite);
+        }
         this.active = false;
-        this.app.stage.removeChild(this.sprite);
     }
 } 

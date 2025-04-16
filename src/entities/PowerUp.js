@@ -22,7 +22,6 @@ export class PowerUp {
     getDurationByType() {
         switch(this.type) {
             case 'rapidFire': return 300; // 5 seconds at 60 FPS
-            case 'laser': return 240;     // 4 seconds
             case 'missile': return 180;   // 3 seconds
             case 'shield': return 420;    // 7 seconds
             default: return 300;
@@ -30,66 +29,39 @@ export class PowerUp {
     }
     
     createSpriteByType() {
-        const sprite = new PIXI.Graphics();
+        // Create a container for the power-up
+        const container = new PIXI.Container();
         
+        // Create the main power-up circle
+        const powerUp = new PIXI.Graphics();
+        powerUp.beginFill(this.getPowerUpColor());
+        powerUp.drawCircle(0, 0, 30);
+        powerUp.endFill();
+        
+        // Create a glow effect
+        const glow = new PIXI.Graphics();
+        glow.beginFill(this.getPowerUpColor(), 0.4);
+        glow.drawCircle(0, 0, 40);
+        glow.endFill();
+        
+        // Add both to the container
+        container.addChild(glow);
+        container.addChild(powerUp);
+        
+        return container;
+    }
+    
+    getPowerUpColor() {
         switch(this.type) {
             case 'rapidFire':
-                // Rapid fire power-up (red)
-                sprite.beginFill(0xFF0000);
-                sprite.drawCircle(0, 0, 10);
-                sprite.endFill();
-                
-                // Rapid fire icon
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawRect(-5, -2, 10, 4);
-                sprite.drawRect(-5, -6, 10, 4);
-                sprite.endFill();
-                break;
-                
-            case 'laser':
-                // Laser power-up (blue)
-                sprite.beginFill(0x0000FF);
-                sprite.drawCircle(0, 0, 10);
-                sprite.endFill();
-                
-                // Laser icon
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawRect(-2, -8, 4, 16);
-                sprite.endFill();
-                break;
-                
+                return 0xFF0000; // Red
             case 'missile':
-                // Missile power-up (orange)
-                sprite.beginFill(0xFFA500);
-                sprite.drawCircle(0, 0, 10);
-                sprite.endFill();
-                
-                // Missile icon
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawPolygon([0, -8, -5, 0, 0, 5, 5, 0]);
-                sprite.endFill();
-                break;
-                
+                return 0xFFA500; // Orange
             case 'shield':
-                // Shield power-up (green)
-                sprite.beginFill(0x00FF00);
-                sprite.drawCircle(0, 0, 10);
-                sprite.endFill();
-                
-                // Shield icon
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawCircle(0, 0, 6);
-                sprite.endFill();
-                break;
-                
+                return 0x00FF00; // Green
             default:
-                // Default power-up
-                sprite.beginFill(0xFFFFFF);
-                sprite.drawCircle(0, 0, 10);
-                sprite.endFill();
+                return 0xFFFFFF; // White
         }
-        
-        return sprite;
     }
     
     update() {
@@ -104,6 +76,8 @@ export class PowerUp {
     
     destroy() {
         this.active = false;
-        this.app.stage.removeChild(this.sprite);
+        if (this.sprite && this.sprite.parent) {
+            this.sprite.parent.removeChild(this.sprite);
+        }
     }
 } 
